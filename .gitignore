@@ -1,5 +1,5 @@
 # Secrets / credentials
 credentials.json
-backend\credentials.json
+backend/credentials.json
 .env
 .env.local
