@@ -53,8 +53,8 @@ This project transforms raw flight activity into actionable environmental insigh
 2. Extract departure and arrival airports
 3. Map airports to latitude/longitude
 4. Compute great-circle distance (Haversine)
-5. Estimate fuel burn: fuel_kg ≈ fixed_fuel + (fuel_per_km × distance_km)
-6. Convert to CO₂: CO₂_kg = fuel_kg × 3.16
+5. Estimate fuel burn: `fuel_kg ≈ fixed_fuel + (fuel_per_km × distance_km)`
+6. Convert to CO₂: `CO₂_kg = fuel_kg × 3.16`
 
 Flights without reliable departure/arrival inference are excluded and reported as coverage loss.
 
@@ -77,16 +77,15 @@ npm run dev
 
 ### Visit:
 
-- Backend API: http://127.0.0.1:8000
-
-- Frontend UI: http://localhost:3000
+- **Backend API**: http://127.0.0.1:8000
+- **Frontend UI**: http://localhost:3000
 
 ## 🗺️ API Endpoints
-- /health – API status
+- `/health` – API status
 
-- /co2/summary/{date} – Daily CO₂ summary
+- `/co2/summary/{date}` – Daily CO₂ summary
 
-- /co2/map/{date} – Map-ready airport & route emissions data
+- `/co2/map/{date}` – Map-ready airport & route emissions data
 
 ## 📸 Screenshots
 KPI dashboard (total CO₂, flights)
