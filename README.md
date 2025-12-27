@@ -89,10 +89,13 @@ npm run dev
 
 ## 📸 Screenshots
 KPI dashboard (total CO₂, flights)
-
+![KPI dashboard](photos/image.png)
 Top routes and airports tables
-
+![Top Routes](photos/image-1.png)
+![Top airports](photos/image-2.png)
 World map with emission bubbles and route lines
+![World map 1](photos/image-3.png)
+![World map 2](photos/image-4.png)
 
 ## 🔮 Future Work
 - Aircraft-type–specific fuel burn modeling
