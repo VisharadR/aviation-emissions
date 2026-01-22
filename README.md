@@ -87,6 +87,58 @@ npm run dev
 
 - `/co2/map/{date}` – Map-ready airport & route emissions data
 
+## 📥 Fetching Data for Additional Dates
+
+Currently, the application only includes data for **December 25, 2025**. To add data for other dates:
+
+### 1. Set up OpenSky API Credentials
+
+You need OpenSky Network API credentials (OAuth client ID and secret):
+
+1. Register at [OpenSky Network](https://opensky-network.org/) and create an OAuth application
+2. Copy the template file and add your credentials:
+   ```bash
+   cp backend/credentials.json.example backend/credentials.json
+   ```
+   Then edit `backend/credentials.json` with your actual credentials:
+   ```json
+   {
+     "client_id": "your-client-id",
+     "client_secret": "your-client-secret"
+   }
+   ```
+
+   > ⚠️ **Important**: `credentials.json` is in `.gitignore` and will not be committed to the repository.
+
+   Alternatively, you can use environment variables or pass them directly to the client.
+
+### 2. Ingest Flight Data
+
+Fetch flight data for a specific date:
+```bash
+cd backend
+source venv/bin/activate  # if using virtual environment
+python scripts/ingest_day.py 2025-12-26
+```
+
+Or use the helper script to ingest and compute in one step:
+```bash
+# Single date
+python scripts/ingest_and_compute.py 2025-12-26
+
+# Date range
+python scripts/ingest_and_compute.py 2025-12-26 2025-12-30
+```
+
+### 3. Compute Emissions
+
+If you only ran ingestion, compute emissions separately:
+```bash
+python scripts/compute_co2_day.py 2025-12-26
+```
+
+**Note:** OpenSky Network provides historical data going back several years. However, data availability may vary by date. The API returns empty results for dates with no available data.
+
 ## 📸 Screenshots
 KPI dashboard (total CO₂, flights)
 ![KPI dashboard](photos/image.png)

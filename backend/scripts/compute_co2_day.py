@@ -3,7 +3,7 @@ import pandas as pd
 
 from app.storage import load_parquet, save_parquet
 from app.airports import load_airports
-from app.emissions import haversine_km, co2_from_distance_km
+from app.emissions import compute_emissions_vectorized
 
 def compute_day(date_yyyymmdd: str):
     flights_name = f"flights_{date_yyyymmdd.replace('-', '')}"
@@ -28,16 +28,9 @@ def compute_day(date_yyyymmdd: str):
     print("Sample dep/arr:", df[["dep","arr"]].dropna().head(5).to_dict(orient="records"))
 
 
-    # Compute distance + CO2 where we have both endpoints
-    def row_distance_km(r):
-        if pd.isna(r["dep_lat"]) or pd.isna(r["arr_lat"]):
-            return None
-        return haversine_km(r["dep_lat"], r["dep_lon"], r["arr_lat"], r["arr_lon"])
-    
-    df["distance_km"] = df.apply(row_distance_km, axis=1)
-    df["co2_kg"] = df["distance_km"].apply(
-        lambda d: co2_from_distance_km(d) if pd.notna(d) else None
-    )
+    # Compute distance + CO2 where we have both endpoints (optimized vectorized)
+    print("Computing distances and emissions (optimized vectorized)...")
+    df = compute_emissions_vectorized(df, use_gpu=False)
 
     # Keep only flights where we could compute it
     computed = df.dropna(subset=["co2_kg"]).copy()

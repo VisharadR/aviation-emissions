@@ -1,5 +1,56 @@
 # Secrets / credentials
 credentials.json
+**/credentials.json
 backend/credentials.json
+**/.env
+**/.env.local
 .env
 .env.local
+*.env
+*.key
+*.pem
+*.p12
+*.pfx
+
+# API keys and tokens
+**/secrets/
+**/*secret*
+**/*password*
+**/*token*.json
+
+# Data files (large and potentially sensitive)
+backend/data/*.csv
+backend/data/*.parquet
+backend/data/*.json
+!backend/data/ourairports_airports.csv  # Keep airport metadata (public data)
+# Range files (aggregated date ranges)
+backend/data/range_*.csv
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store# Logs
+*.log
+logs/
+
+# OS files
+Thumbs.db
+.DS_Store
