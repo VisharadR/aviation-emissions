@@ -1,16 +1,36 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { MapContainer, TileLayer, CircleMarker, Polyline, Popup, useMap } from "react-leaflet";
 
 function FixLeafletResize({ trigger }) {
   const map = useMap();
 
   useEffect(() => {
+    if (!map) return;
+    
     // run a couple times to handle Next layout + fonts settling
-    const t1 = setTimeout(() => map.invalidateSize(), 50);
-    const t2 = setTimeout(() => map.invalidateSize(), 250);
-    const t3 = setTimeout(() => map.invalidateSize(), 600);
+    const t1 = setTimeout(() => {
+      try {
+        map.invalidateSize();
+      } catch (e) {
+        // Map might be destroyed
+      }
+    }, 50);
+    const t2 = setTimeout(() => {
+      try {
+        map.invalidateSize();
+      } catch (e) {
+        // Map might be destroyed
+      }
+    }, 250);
+    const t3 = setTimeout(() => {
+      try {
+        map.invalidateSize();
+      } catch (e) {
+        // Map might be destroyed
+      }
+    }, 600);
 
     return () => {
       clearTimeout(t1);
@@ -25,12 +45,42 @@ function FixLeafletResize({ trigger }) {
 export default function EmissionsMap({ airports, routes }) {
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Force a re-trigger when data changes
-  const trigger = useMemo(() => `${airports?.length || 0}-${routes?.length || 0}`, [airports, routes]);
+  // Create a unique key when data changes to force remount
+  // Use a hash of the data to ensure uniqueness
+  const mapKey = useMemo(() => {
+    if (!airports || !routes) return "initial";
+    const airportsStr = airports.map(a => `${a.icao}-${a.lat}-${a.lon}`).join(",");
+    const routesStr = routes.map(r => `${r.dep}-${r.arr}`).join(",");
+    // Simple hash function
+    let hash = 0;
+    const str = airportsStr + routesStr;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return `map-${Math.abs(hash)}`;
+  }, [airports, routes]);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return (
+      <div style={{ height: 600, width: "100%", border: "1px solid #ddd", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p>Loading map...</p>
+      </div>
+    );
+  }
+
+  if (!airports || !routes || airports.length === 0) {
+    return (
+      <div style={{ height: 600, width: "100%", border: "1px solid #ddd", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p>No map data available</p>
+      </div>
+    );
+  }
 
   function bubbleRadius(co2_kg) {
     const tons = co2_kg / 1000;
@@ -40,12 +90,13 @@ export default function EmissionsMap({ airports, routes }) {
   return (
     <div style={{ height: 600, width: "100%", border: "1px solid #ddd", borderRadius: 8, overflow: "hidden" }}>
       <MapContainer
+        key={mapKey}
         center={[20, 0]}
         zoom={2}
         scrollWheelZoom={true}
-        style={{ height: "100%", width: "100%" }}   // IMPORTANT: explicit style
+        style={{ height: "100%", width: "100%" }}
       >
-        <FixLeafletResize trigger={trigger} />
+        <FixLeafletResize trigger={mapKey} />
 
         <TileLayer
           attribution='&copy; OpenStreetMap contributors'
@@ -54,7 +105,7 @@ export default function EmissionsMap({ airports, routes }) {
 
         {routes?.map((r, i) => (
           <Polyline
-            key={`route-${i}`}
+            key={`route-${i}-${r.dep}-${r.arr}`}
             positions={[
               [r.dep_lat, r.dep_lon],
               [r.arr_lat, r.arr_lon],
@@ -72,7 +123,7 @@ export default function EmissionsMap({ airports, routes }) {
 
         {airports?.map((a, i) => (
           <CircleMarker
-            key={`airport-${i}`}
+            key={`airport-${i}-${a.icao}`}
             center={[a.lat, a.lon]}
             radius={bubbleRadius(a.co2_kg)}
             pathOptions={{ opacity: 0.7, fillOpacity: 0.5 }}
