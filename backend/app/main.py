@@ -20,6 +20,8 @@ from app.opensky_client import OpenSkyOAuthClient
 from app.emissions import haversine_km, co2_from_distance_km, compute_emissions_vectorized
 
 app = FastAPI(title="Aviation Emissions MVP")
+from app.live import router as live_router
+app.include_router(live_router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -23,6 +23,11 @@ backend/data/*.csv
 backend/data/*.parquet
 backend/data/*.json
 !backend/data/ourairports_airports.csv  # Keep airport metadata (public data)
+!backend/data/ny_airports.csv
+!backend/data/ny_airports.source.json
+!backend/data/world_airports.csv
+!backend/data/world_airports.source.json
+!frontend/.env.example
 # Range files (aggregated date ranges)
 backend/data/range_*.csv
 

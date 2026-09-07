@@ -1,5 +1,9 @@
 # ✈️ Aviation Emissions Analytics Web App
 
+**New: [Worldwide live aviation](LIVE_WORLD.md)** — open `/live` for global OpenSky
+observations, estimated CO₂ rates, country/airport filters and a live map. The
+[New York view](LIVE_NEW_YORK.md) is available at `/live/ny`. Historical analytics remain at `/`.
+
 A full-stack web application that estimates and visualizes **global aviation CO₂ emissions** using real-world ADS-B flight data from the OpenSky Network.
 
 This project transforms raw flight activity into actionable environmental insights, including total emissions, top routes, top airports, and interactive world maps.
