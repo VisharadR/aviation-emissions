@@ -20,7 +20,7 @@ jobs:
       - name: Verify the read-only container
         run: |
           docker run -d --name aviation-live-api -p 8000:8000 aviation-live-api
-          curl --fail --retry 12 --retry-connrefused --retry-delay 2 http://localhost:8000/health
+          curl --fail --retry 12 --retry-all-errors --retry-delay 2 --max-time 5 http://localhost:8000/health
           curl --fail http://localhost:8000/openapi.json > /tmp/live-openapi.json
           python - <<'PY'
           import json
