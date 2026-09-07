@@ -1,0 +1,15 @@
+# Optional backend host for GitHub Pages. No paid resource is requested.
+services:
+  - type: web
+    name: aviation-emissions-live-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: OPENSKY_CLIENT_ID
+        sync: false
+      - key: OPENSKY_CLIENT_SECRET
+        sync: false
+      - key: LIVE_ALLOWED_ORIGINS
+        value: https://visharadr.github.io
