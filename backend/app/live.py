@@ -2,6 +2,7 @@
 import copy
 import csv
 import math
+import logging
 import os
 import threading
 import time
@@ -17,6 +18,7 @@ if not AIRPORTS_PATH.exists():
     AIRPORTS_PATH = ROOT / "data" / "ourairports_airports.csv"
 MAX_AGE = 120
 RADIUS_KM = 25
+logger = logging.getLogger("uvicorn.error")
 WORLD_AIRPORTS_PATH = ROOT / "data" / "world_airports.csv"
 if not WORLD_AIRPORTS_PATH.exists():
     WORLD_AIRPORTS_PATH = ROOT / "data" / "ourairports_airports.csv"
@@ -120,13 +122,16 @@ class LiveService:
         self.next_fetch = 0
         self.error = None
         self.interval = 60
+        self.request_stage = "observations"
 
     def fetch(self):
         if self.client is None:
             self.client = OpenSkyOAuthClient(str(ROOT / "credentials.json"), os.getenv("OPENSKY_CLIENT_ID"), os.getenv("OPENSKY_CLIENT_SECRET"))
         auth = bool(self.client.client_id and self.client.client_secret)
         self.interval = (90 if auth else 1800) if self.scope == "world" else (60 if auth else 900)
+        self.request_stage = "authentication"
         headers = {"Authorization": "Bearer " + self.client._ensure_token()} if auth else {}
+        self.request_stage = "observations"
         r = requests.get(OPENSKY_API_BASE + "/states/all", headers=headers,
             params={} if self.scope == "world" else dict(lamin=40.2, lomin=-80.1, lamax=45.3, lomax=-71.5), timeout=30)
         if r.status_code == 401 and auth:
@@ -153,9 +158,18 @@ class LiveService:
                     self.snapshot = dict(observed_at=payload["time"], fetched_at=now, flights=flights)
                     self.error = None
                 except Exception as exc:
-                    code = getattr(getattr(exc, "response", None), "status_code", None)
+                    # The OAuth client wraps requests exceptions. Recover only safe
+                    # diagnostic fields; never log request bodies or credentials.
+                    causes, cause = [], exc
+                    while cause is not None and all(cause is not item for item in causes):
+                        causes.append(cause)
+                        cause = cause.__cause__ or cause.__context__
+                    code = next((getattr(e.response, "status_code", None) for e in causes if getattr(e, "response", None) is not None), None)
+                    timeout = any(isinstance(e, requests.Timeout) for e in causes)
+                    logger.warning("OpenSky %s failed: %s; HTTP %s", self.request_stage, "/".join(type(e).__name__ for e in causes), code)
                     self.error = ("OpenSky rate limit reached. Waiting before retrying." if code == 429 else
                                   "OpenSky authentication failed. Check server credentials." if code in (401, 403) else
+                                  f"OpenSky {self.request_stage} request timed out. Retrying automatically." if timeout else
                                   "Live observations are unavailable. The server will retry automatically.")
                 self.next_fetch = max(self.next_fetch, time.time()+self.interval)
             now = time.time()
