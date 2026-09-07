@@ -30,7 +30,8 @@ export default function LiveDashboard({ scope = "world" }) {
       if (fetching) return;
       fetching = true; setBusy(true);
       try {
-        const res = await fetch(`/api/live/${scope}`, { cache: "no-store", signal: controller.signal });
+        const apiOrigin = process.env.NEXT_PUBLIC_LIVE_API_URL?.replace(/\/$/, "");
+        const res = await fetch(apiOrigin ? `${apiOrigin}/live/${scope}` : `/api/live/${scope}`, { cache: "no-store", signal: controller.signal });
         const next = await res.json();
         if (!res.ok) throw new Error(next.error || "Live feed unavailable");
         if (!alive) return;
@@ -79,7 +80,7 @@ export default function LiveDashboard({ scope = "world" }) {
   const status = paused ? "Paused" : fresh ? "Live observations" : error ? "Feed unavailable" : data ? "Feed delayed" : "Connecting";
 
   return <main className={styles.shell}>
-    <nav className={styles.nav}><Link href="/" className={styles.brand}>model<span>.earth</span> <small>AVIATION</small></Link><div><Link href={worldwide ? "/live/ny" : "/live"}>{worldwide ? "New York view" : "World view"}</Link><Link href="/">Historical analytics ↗</Link><span className={styles.navLabel}>{worldwide ? "WORLDWIDE" : "NEW YORK STATE"}</span></div></nav>
+    <nav className={styles.nav}><Link href="/" className={styles.brand}>model<span>.earth</span> <small>AVIATION</small></Link><div><Link href={worldwide ? "/live/ny" : "/live"}>{worldwide ? "New York view" : "World view"}</Link>{process.env.NEXT_PUBLIC_LIVE_ONLY !== "true" && <Link href="/">Historical analytics ↗</Link>}<span className={styles.navLabel}>{worldwide ? "WORLDWIDE" : "NEW YORK STATE"}</span></div></nav>
     <header className={styles.header}><div><p className={styles.eyebrow}>AIRPORT OBSERVATORY / {worldwide ? "WORLD" : "NY"}</p><h1>{worldwide ? "The world, in flight" : "New York, in flight"}<span>.</span></h1><p>Live aircraft observations. A clearer view of estimated carbon emissions.</p></div><div className={styles.feed}><span className={`${styles.badge} ${fresh && !paused ? styles.live : ""}`}><i />{status}</span><span>Observed {clock(data?.observed_at)}</span></div></header>
     <section className={styles.toolbar} aria-label="Flight controls">{worldwide && <label>Airport country<select aria-label="Airport country" value={country} onChange={e => {setCountry(e.target.value); setAirport("all");}}><option value="all">All countries · includes en route</option><option value="unassociated">No nearby airport</option>{(data?.countries || []).map(c => <option key={c} value={c}>{countryName(c)}</option>)}</select></label>}<label>Airport<select aria-label="Airport" value={airport} onChange={e => {setAirport(e.target.value); setSelected(null);}}><option value="all">{worldwide ? "All observed airports" : "All New York airports"}</option>{airportOptions.map(a => <option key={a.id} value={a.id}>{a.code} · {a.name}</option>)}</select></label><label className={styles.search}>Find an aircraft<input type="search" placeholder="Callsign or ICAO address" value={query} onChange={e => setQuery(e.target.value)} /></label><button onClick={() => {setPaused(p => !p); if (paused) refresh.current();}}>{paused ? "Resume updates" : "Pause updates"}</button><button disabled={busy} onClick={() => refresh.current()}>{busy ? "Updating…" : "Refresh ↻"}</button></section>
     {(error || data?.error || (data && !fresh)) && <div className={styles.notice} role="status">{error || data?.error || "Observations have expired. Current emissions are unavailable until the feed updates."} {data?.next_fetch_at && !error ? `Next provider check: ${clock(data.next_fetch_at)}.` : ""}</div>}

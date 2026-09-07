@@ -1,0 +1,48 @@
+name: Deploy live dashboard to GitHub Pages
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Check backend configuration
+        env:
+          LIVE_API_URL: ${{ vars.LIVE_API_URL }}
+        run: |
+          test -n "$LIVE_API_URL" || { echo 'Set repository variable LIVE_API_URL to the hosted HTTPS backend origin first.'; exit 1; }
+          curl --fail --retry 3 --max-time 120 "$LIVE_API_URL/health"
+      - uses: actions/configure-pages@v5
+        id: pages
+      - run: npm ci
+        working-directory: frontend
+      - name: Build static live dashboard
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_LIVE_API_URL: ${{ vars.LIVE_API_URL }}
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: node scripts/build-pages.mjs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/.pages-site/out
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

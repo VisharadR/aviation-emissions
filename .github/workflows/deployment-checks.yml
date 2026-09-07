@@ -1,0 +1,56 @@
+name: Validate live deployment
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the deployment image
+        run: docker build -t aviation-live-api .
+      - name: Verify the read-only container
+        run: |
+          docker run -d --name aviation-live-api -p 8000:8000 aviation-live-api
+          curl --fail --retry 12 --retry-all-errors --retry-delay 2 --max-time 5 http://localhost:8000/health
+          curl --fail http://localhost:8000/openapi.json > /tmp/live-openapi.json
+          python - <<'PY'
+          import json
+          with open('/tmp/live-openapi.json') as source:
+              paths = json.load(source)['paths']
+          assert set(paths) == {'/health', '/live/world', '/live/ny'}
+          assert all(set(methods) == {'get'} for methods in paths.values())
+          PY
+          docker exec aviation-live-api sh -c 'test ! -f /app/credentials.json && test ! -f /app/app/main.py && test "$(id -u)" != 0'
+      - name: Container logs
+        if: failure()
+        run: docker logs aviation-live-api || true
+  pages-export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - name: Validate static packaging only (not published)
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_LIVE_API_URL: https://example.com
+          PAGES_BASE_PATH: /aviation-emissions
+        run: |
+          node scripts/build-pages.mjs
+          test -f .pages-site/out/index.html
+          test -f .pages-site/out/live/index.html
+          test -f .pages-site/out/live/ny/index.html

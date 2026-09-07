@@ -1,0 +1,12 @@
+**
+!Dockerfile
+!backend/
+!backend/app/
+!backend/app/__init__.py
+!backend/app/live.py
+!backend/app/live_main.py
+!backend/app/opensky_client.py
+!backend/requirements-live.txt
+!backend/data/
+!backend/data/world_airports.csv
+!backend/data/ny_airports.csv
