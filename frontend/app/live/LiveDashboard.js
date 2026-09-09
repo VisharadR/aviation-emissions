@@ -24,6 +24,11 @@ export default function LiveDashboard({ scope = "world" }) {
   const pauseRef = useRef(false);
   useEffect(() => { pauseRef.current = paused; }, [paused]);
   useEffect(() => {
+    if (process.env.NEXT_PUBLIC_LIVE_ONLY === "true" && !process.env.NEXT_PUBLIC_LIVE_API_URL) {
+      setError("Live backend disconnected. Flight observations and emission estimates are unavailable.");
+      refresh.current = () => {};
+      return;
+    }
     let alive = true, fetching = false, nextPollAt = 0;
     const controller = new AbortController();
     const update = async () => {

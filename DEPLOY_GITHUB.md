@@ -14,12 +14,10 @@ runtime requirements. It runs as a non-root user with one worker so the shared
 OpenSky rate limiter remains effective. Historical mutation endpoints, private
 historical data, and credentials files are excluded from the image.
 
-`render.yaml` can create a free backend from this repository. Supply
+The previously deployed Render service has been removed. Supply
 `OPENSKY_CLIENT_ID` and `OPENSKY_CLIENT_SECRET` as private runtime variables on the
 host. Never put these in a public GitHub variable or the browser bundle.
 `LIVE_ALLOWED_ORIGINS` must include `https://visharadr.github.io` for browser access.
-Render free services sleep when inactive and may take time to wake; use an
-appropriate host/plan if uninterrupted service is required. No paid plan is selected.
 
 Any HTTPS host supporting the Dockerfile or Python/uvicorn can be used instead.
 Its command is `uvicorn app.live_main:app --host 0.0.0.0 --port $PORT --workers 1`
@@ -33,7 +31,9 @@ from `backend`, with `requirements-live.txt` installed.
 3. Set Settings → Pages → Source to **GitHub Actions**.
 4. Run **Deploy live dashboard to GitHub Pages** from Actions.
 
-The workflow refuses to publish without a reachable backend. It builds into an
+When `LIVE_API_URL` is unset, Pages displays a disconnected-backend message and
+does not request live data. When configured, the workflow checks backend health.
+It builds into an
 ignored staging directory, preserves the main application sources, sets the
 repository base path, and deploys only generated static files.
 
